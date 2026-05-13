@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Account</title>
+<style>
+:root {
+  --bg:#080C18; --sf:#0F1428; --cd:#161D34; --bd:#2A3350;
+  --tx:#EDE8DF; --sb:#6E7490; --gd:#C9A84C; --gb:rgba(201,168,76,0.13);
+  --gg:rgba(201,168,76,0.3); --rd:#D95555;
+}
+body.light {
+  --bg:#F0EBE0; --sf:#FFFFFF; --cd:#FAF5EC; --bd:#D9D0C0;
+  --tx:#1A1208; --sb:#7A6B55; --gd:#8B5E2A; --gb:rgba(139,94,42,0.1);
+  --gg:rgba(139,94,42,0.2); --rd:#C0392B;
+}
+* { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+html, body { height:100%; background:var(--bg); color:var(--tx); font-family:-apple-system,'Helvetica Neue',Arial,sans-serif; }
+#app { max-width:430px; margin:0 auto; min-height:100vh; background:var(--bg); position:relative; }
+::-webkit-scrollbar { display:none; }
+
+/* ── INPUTS ── */
+input, textarea {
+  display:block; width:100%;
+  background:var(--sf); color:var(--tx);
+  border:2px solid var(--bd); border-radius:14px;
+  padding:15px 16px; font-size:16px; font-family:inherit;
+  -webkit-appearance:none; appearance:none;
+  outline:none; transition:border-color .2s;
+  cursor:text; touch-action:manipulation;
+}
+input:focus { border-color:var(--gd); }
+input[type=number] { -moz-appearance:textfield; }
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button { -webkit-appearance:none; }
+
+/* ── BUTTONS ── */
+button {
+  cursor:pointer; font-family:inherit; border:none;
+  -webkit-appearance:none; appearance:none;
+  touch-action:manipulation;
+}
+button:active { opacity:.8; transform:scale(.97); }
+
+.btn-gold { background:var(--gd); color:#fff; border-radius:14px; padding:16px; font-size:16px; font-weight:700; width:100%; }
+.btn-red  { background:var(--rd); color:#fff; border-radius:14px; padding:16px; font-size:16px; font-weight:700; }
+.btn-out  { background:transparent; color:var(--tx); border:2px solid var(--bd); border-radius:14px; padding:14px; font-size:15px; font-weight:600; flex:1; }
+.btn-icon { background:none; color:var(--tx); padding:8px; display:flex; align-items:center; justify-content:center; }
+
+/* ── LAYOUT ── */
+.screen { min-height:100vh; display:flex; flex-direction:column; }
+.header { padding:48px 20px 16px; background:var(--sf); border-bottom:1px solid var(--bd); display:flex; align-items:center; gap:14px; position:sticky; top:0; z-index:50; }
+.header-plain { padding:48px 20px 16px; background:var(--sf); border-bottom:1px solid var(--bd); position:sticky; top:0; z-index:50; }
+.scroll { flex:1; overflow-y:auto; padding-bottom:90px; }
+.pad { padding:20px; }
+.pad-t { padding:16px 20px 0; }
+.field { margin-bottom:16px; }
+.lbl { display:block; font-size:11px; font-weight:700; color:var(--sb); text-transform:uppercase; letter-spacing:.1em; margin-bottom:8px; }
+.row2 { display:flex; gap:12px; }
+.gold-box { background:var(--gb); border:1px solid rgba(201,168,76,.3); border-radius:12px; padding:10px 16px; display:flex; align-items:center; gap:8px; }
+.card { background:var(--cd); border:1px solid var(--bd); border-radius:16px; padding:16px; }
+.stat-row { background:var(--cd); border:1px solid var(--bd); border-radius:12px; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+
+/* ── BOTTOM NAV ── */
+.bnav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:430px; background:var(--sf); border-top:1px solid var(--bd); display:flex; z-index:100; padding-bottom:env(safe-area-inset-bottom, 8px); }
+.ntab { flex:1; background:none; display:flex; flex-direction:column; align-items:center; gap:3px; padding:10px 0; font-size:11px; color:var(--sb); font-weight:400; transition:color .2s; }
+.ntab.on { color:var(--gd); font-weight:700; }
+
+/* ── TIMER ── */
+.timer-center { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:40px; padding:24px; }
+.ring { width:240px; height:240px; border-radius:50%; background:var(--sf); border:3px solid var(--bd); display:flex; flex-direction:column; align-items:center; justify-content:center; transition:all .5s; }
+.ring.on { border-color:var(--gd); box-shadow:0 0 0 16px var(--gb), 0 0 80px var(--gg); }
+.ring.done { border-color:var(--gd); }
+.clock { font-size:42px; font-weight:700; letter-spacing:.03em; color:var(--sb); font-variant-numeric:tabular-nums; font-family:Georgia,serif; transition:color .3s; }
+.ring.on .clock { color:var(--gd); }
+.ring.done .clock { color:var(--tx); }
+.clock-sub { display:flex; gap:28px; margin-top:6px; }
+.clock-sub span { font-size:9px; color:var(--sb); letter-spacing:.1em; }
+.timer-status { font-size:12px; color:var(--gd); letter-spacing:.1em; text-transform:uppercase; min-height:18px; margin-top:6px; }
+
+/* ── MODAL ── */
+.overlay { position:fixed; inset:0; background:rgba(0,0,0,.7); display:flex; align-items:flex-end; justify-content:center; z-index:200; }
+.modal { background:var(--sf); border-radius:24px 24px 0 0; padding:24px 20px 40px; width:100%; max-width:430px; border-top:1px solid var(--bd); }
+
+/* ── ACTIVITY GRID ── */
+.agrid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.acard { background:var(--cd); border:1px solid var(--bd); border-radius:16px; padding:16px; cursor:pointer; transition:opacity .15s; }
+.acard:active { opacity:.7; }
+.aico { width:46px; height:46px; border-radius:13px; background:var(--gb); color:var(--gd); display:flex; align-items:center; justify-content:center; margin-bottom:10px; }
+.a-short { font-family:Georgia,serif; font-size:18px; font-weight:700; color:var(--gd); }
+.a-lbl { font-size:12px; color:var(--sb); margin-top:3px; line-height:1.4; }
+
+/* ── MISC ── */
+.serif { font-family:Georgia,serif; }
+.gold { color:var(--gd); }
+.sub { color:var(--sb); }
+.logo { width:88px; height:88px; border-radius:50%; background:var(--gb); border:2px solid var(--gd); display:flex; align-items:center; justify-content:center; font-size:40px; color:var(--gd); margin:0 auto 24px; }
+.qgrid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+.qstat { background:var(--cd); border:1px solid var(--bd); border-radius:12px; padding:12px 8px; text-align:center; }
+.pbar { height:5px; background:var(--bd); border-radius:5px; overflow:hidden; }
+.pfill { height:100%; background:var(--gd); border-radius:5px; }
+.fab { position:fixed; width:56px; height:56px; border-radius:50%; background:var(--gd); color:#fff; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 20px var(--gg); z-index:50; bottom:80px; right:20px; }
+.type-btn { flex:1; padding:14px; border-radius:12px; border:2px solid var(--bd); background:var(--cd); color:var(--sb); font-size:15px; font-weight:600; font-family:inherit; transition:all .2s; }
+.type-btn.on { border-color:var(--gd); background:var(--gb); color:var(--gd); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.55} }
+.pulsing { animation:pulse 2s ease infinite; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// ─── ICONS ────────────────────────────────────────────────────────────────────
+const IC={
+rdqd:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M12 2L14.09 8.26L20.78 8.27L15.45 12.14L17.54 18.4L12 14.53L6.46 18.4L8.55 12.14L3.22 8.27L9.91 8.26L12 2Z"/></svg>`,
+lb:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 016.5 17H20" stroke-linecap="round"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><path d="M9 7h6M9 11h4" stroke-linecap="round"/></svg>`,
+llc:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 5h18M3 12h18M3 19h18" stroke-linecap="round"/><rect x="14" y="3" width="7" height="7" rx="1"/></svg>`,
+ps:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2C8.686 2 6 4.686 6 8c0 4 3.5 7 6 8 2.5-1 6-4 6-8 0-3.314-2.686-6-6-6z"/><path d="M12 16v6M9 22h6" stroke-linecap="round"/></svg>`,
+pg:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="7" r="3"/><circle cx="15" cy="7" r="3"/><path d="M3 21c0-3.314 2.686-6 6-6h6c3.314 0 6 2.686 6 6" stroke-linecap="round"/></svg>`,
+jeune:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.64 5.64l2.12 2.12M16.24 16.24l2.12 2.12M5.64 18.36l2.12-2.12M16.24 7.76l2.12-2.12"/></svg>`,
+home:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 12L12 3l9 9v9h-6v-6H9v6H3v-9z" stroke-linejoin="round"/></svg>`,
+rep:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 8h10M7 12h7M7 16h5" stroke-linecap="round"/></svg>`,
+set:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>`,
+back:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>`,
+plus:`<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>`,
+trash:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>`,
+sun:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>`,
+moon:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" stroke-linejoin="round"/></svg>`,
+chev:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>`,
+clk:`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>`
+};
+
+// ─── STORAGE ──────────────────────────────────────────────────────────────────
+function ld(k,d){try{const v=localStorage.getItem('ma_'+k);return v!=null?JSON.parse(v):d;}catch{return d;}}
+function sv(k,v){try{localStorage.setItem('ma_'+k,JSON.stringify(v));}catch{}}
+
+// ─── UTILS ────────────────────────────────────────────────────────────────────
+function fmtClock(s){
+  s=Math.max(0,s|0);
+  return String(Math.floor(s/3600)).padStart(2,'0')+':'+
+         String(Math.floor((s%3600)/60)).padStart(2,'0')+':'+
+         String(s%60).padStart(2,'0');
+}
+function fmtFull(s){
+  s=Math.max(0,s|0);if(!s)return '0 seconde';
+  const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;
+  return [h&&h+'h',m&&m+'m',(sec||(!h&&!m))&&sec+'s'].filter(Boolean).join(' ');
+}
+function fmtShort(s){
+  s=Math.max(0,s|0);if(!s)return '0s';
+  const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;
+  if(h)return h+'h '+m+'m';if(m)return m+'m '+sec+'s';return sec+'s';
+}
+function mKey(d){const t=new Date(d);return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0');}
+function yKey(d){return String(new Date(d).getFullYear());}
+function mLabel(k){const[y,m]=k.split('-');return['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'][+m-1]+' '+y;}
+function prevMK(){const d=new Date();d.setMonth(d.getMonth()-1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
+
+function cStats(recs,books){
+  const st={rdqd:{c:0,d:0},lb:{c:0,d:0,ch:0},llc:{c:0,d:0,bks:{}},ps:{c:0,d:0},pg:{c:0,d:0},j:{comp:0,part:0}};
+  (recs||[]).forEach(r=>{
+    if(r.type==='rdqd'){st.rdqd.c++;st.rdqd.d+=r.duration||0;}
+    else if(r.type==='lb'){st.lb.c++;st.lb.d+=r.duration||0;st.lb.ch+=r.chapters||0;}
+    else if(r.type==='llc'){st.llc.c++;st.llc.d+=r.duration||0;if(r.bookId){if(!st.llc.bks[r.bookId])st.llc.bks[r.bookId]={t:r.bookTitle,d:0};st.llc.bks[r.bookId].d+=r.duration||0;}}
+    else if(r.type==='ps'){st.ps.c++;st.ps.d+=r.duration||0;}
+    else if(r.type==='pg'){st.pg.c++;st.pg.d+=r.duration||0;}
+    else if(r.type==='jeune'){if(r.fastType==='complet')st.j.comp+=r.days||0;else st.j.part+=r.days||0;}
+  });
+  const bklist=Object.entries(st.llc.bks).map(([id,v])=>{
+    const bk=(books||[]).find(b=>b.id===id);
+    return {id,title:v.t,dur:v.d,pct:bk?Math.min(Math.round(bk.pagesRead/bk.totalPages*100),100):0};
+  });
+  return {...st,llc:{...st.llc,bklist}};
+}
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+const A={
+  screen:'register', prev:'home',
+  user:null, theme:'dark',
+  records:[], books:[], reports:[],
+  timerOn:false, timerStartMs:0, elapsed:0, _iv:null,
+  activity:'', selBook:null, selReport:null,
+  modal:'', pendingDur:0,
+  jType:'complet'
+};
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function R(){
+  const app=document.getElementById('app');
+  if(!app)return;
+  let h='';
+  switch(A.screen){
+    case 'register': h=scrRegister();break;
+    case 'home':     h=scrHome();break;
+    case 'timer':    h=scrTimer();break;
+    case 'llc':      h=scrLLC();break;
+    case 'llc_add':  h=scrLLCAdd();break;
+    case 'jeune':    h=scrJeune();break;
+    case 'reports':  h=scrReports();break;
+    case 'rdetail':  h=scrRdetail();break;
+    case 'settings': h=scrSettings();break;
+    default:         h=scrHome();
+  }
+  app.innerHTML=h;
+  applyTheme();
+
+  // Re-attach timer interval display after render
+  if(A.screen==='timer' && A.timerOn){
+    clearInterval(A._iv);
+    A._iv=setInterval(()=>{
+      A.elapsed=Math.floor((Date.now()-A.timerStartMs)/1000);
+      const el=document.getElementById('tclk');
+      if(el)el.textContent=fmtClock(A.elapsed);
+    },333);
+  }
+}
+
+function applyTheme(){
+  document.body.className=A.theme==='light'?'light':'';
+}
+
+function go(sc,skipSave){
+  if(!skipSave)A.prev=A.screen;
+  A.screen=sc;R();
+}
+function back(){go(A.prev,true);}
+
+// ─── TIMER CONTROL ────────────────────────────────────────────────────────────
+function timerStart(){
+  clearInterval(A._iv);
+  A.timerStartMs=Date.now()-A.elapsed*1000;
+  A.timerOn=true;
+  const ring=document.getElementById('tring');
+  const stat=document.getElementById('tstat');
+  const btns=document.getElementById('tbtns');
+  if(ring)ring.className='ring on';
+  if(stat){stat.textContent='En cours…';stat.classList.add('pulsing');}
+  const clkEl=document.getElementById('tclk');
+  if(clkEl)clkEl.style.color='';
+  A._iv=setInterval(()=>{
+    A.elapsed=Math.floor((Date.now()-A.timerStartMs)/1000);
+    const el=document.getElementById('tclk');
+    if(el)el.textContent=fmtClock(A.elapsed);
+  },333);
+  if(btns)btns.innerHTML=`<button class="btn btn-red" style="padding:18px 64px;font-size:18px;border-radius:16px" onclick="timerStop()">Fin</button>`;
+}
+
+function timerStop(){
+  clearInterval(A._iv);A._iv=null;
+  A.timerOn=false;
+  A.elapsed=Math.floor((Date.now()-A.timerStartMs)/1000);
+  A.pendingDur=A.elapsed;
+  if(A.activity==='lb')A.modal='lb';
+  else if(A.activity==='llc')A.modal='llc';
+  else A.modal='simple';
+  R();
+}
+
+function timerReset(){
+  clearInterval(A._iv);A._iv=null;
+  A.timerOn=false;A.elapsed=0;A.pendingDur=0;
+  R();
+}
+
+// ─── RECORD ───────────────────────────────────────────────────────────────────
+function saveRecord(extra){
+  A.records.push({id:Date.now().toString(),type:A.activity,date:new Date().toISOString(),duration:A.pendingDur,...extra});
+  sv('records',A.records);
+  if(A.activity==='llc'&&A.selBook&&extra.pages){
+    const b=A.books.find(b=>b.id===A.selBook.id);
+    if(b){b.pagesRead=Math.min(b.pagesRead+extra.pages,b.totalPages);sv('books',A.books);}
+  }
+  A.modal='';A.elapsed=0;A.pendingDur=0;
+  go('home');
+}
+
+function cancelModal(){A.modal='';A.elapsed=0;A.pendingDur=0;R();}
+
+// ─── SCREEN: REGISTER ─────────────────────────────────────────────────────────
+function scrRegister(){
+  return `
+  <div class="screen" style="align-items:center;justify-content:center;min-height:100vh;padding:32px 24px;">
+    <div style="width:100%;max-width:360px;">
+      <div style="text-align:center;margin-bottom:40px;">
+        <div class="logo">✦</div>
+        <h1 class="serif gold" style="font-size:34px;font-weight:700;margin:0 0 8px;letter-spacing:.03em;">My Account</h1>
+        <p class="sub" style="font-size:15px;margin:0;">Votre journal spirituel personnel</p>
+      </div>
+
+      <div class="field">
+        <label class="lbl" for="inp-fn">Prénom</label>
+        <input id="inp-fn" type="text" placeholder="Votre prénom"
+          autocomplete="given-name" autocorrect="off" spellcheck="false"
+          style="font-size:18px;padding:18px 16px;"
+          onkeydown="if(event.key==='Enter'){document.getElementById('inp-ln').focus();}">
+      </div>
+
+      <div class="field" style="margin-bottom:28px;">
+        <label class="lbl" for="inp-ln">Nom de famille</label>
+        <input id="inp-ln" type="text" placeholder="Votre nom"
+          autocomplete="family-name" autocorrect="off" spellcheck="false"
+          style="font-size:18px;padding:18px 16px;"
+          onkeydown="if(event.key==='Enter'){doRegister();}">
+      </div>
+
+      <button class="btn btn-gold" onclick="doRegister()" style="font-size:17px;padding:18px;">
+        Commencer mon journal ✦
+      </button>
+    </div>
+  </div>`;
+}
+
+function doRegister(){
+  const fn=document.getElementById('inp-fn');
+  const ln=document.getElementById('inp-ln');
+  if(!fn||!ln)return;
+  const f=fn.value.trim(), l=ln.value.trim();
+  if(!f){fn.focus();fn.style.borderColor='var(--rd)';return;}
+  if(!l){ln.focus();ln.style.borderColor='var(--rd)';return;}
+  A.user={firstName:f,lastName:l};
+  sv('user',A.user);
+  go('home');
+}
+
+// ─── SCREEN: HOME ─────────────────────────────────────────────────────────────
+function scrHome(){
+  const now=new Date();
+  const months=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  const hr=now.getHours();
+  const greet=hr<12?'Bonjour':hr<18?'Bon après-midi':'Bonsoir';
+  const ms=cStats(A.records.filter(r=>mKey(r.date)===mKey(now.toISOString())),A.books);
+  const ACTS=[
+    {id:'rdqd',s:'RDQD',l:'Rencontre Quotidienne',ic:'rdqd'},
+    {id:'lb',s:'LB',l:'Lecture de la Bible',ic:'lb'},
+    {id:'llc',s:'LLC',l:'Littérature Chrétienne',ic:'llc'},
+    {id:'ps',s:'PS',l:'Prière Seule',ic:'ps'},
+    {id:'pg',s:'PG',l:'Prière en Groupe',ic:'pg'},
+    {id:'jeune',s:'Jeûne',l:'Jeûne',ic:'jeune'},
+  ];
+  const acards=ACTS.map(a=>`
+    <div class="acard" onclick="openAct('${a.id}')">
+      <div class="aico">${IC[a.ic]}</div>
+      <div class="a-short">${a.s}</div>
+      <div class="a-lbl">${a.l}</div>
+    </div>`).join('');
+  const jBanner=(ms.j.comp>0||ms.j.part>0)?`
+    <div class="pad-t">
+      <div style="background:var(--gb);border:1px solid rgba(201,168,76,.25);border-radius:14px;padding:14px 16px;display:flex;gap:12px;align-items:center;">
+        <div style="flex:1;text-align:center;"><div class="serif gold" style="font-size:22px;font-weight:700;">${ms.j.comp}</div><div class="sub" style="font-size:11px;">Jours complet</div></div>
+        <div style="width:1px;background:rgba(201,168,76,.3);align-self:stretch;"></div>
+        <div style="flex:1;text-align:center;"><div class="serif gold" style="font-size:22px;font-weight:700;">${ms.j.part}</div><div class="sub" style="font-size:11px;">Jours partiel</div></div>
+      </div>
+    </div>`:'';
+  return `
+  <div class="screen">
+    <div class="header-plain">
+      <p class="sub" style="font-size:13px;margin-bottom:2px;">${greet},</p>
+      <h1 class="serif" style="font-size:26px;font-weight:700;margin-bottom:2px;">${A.user.firstName} ${A.user.lastName}</h1>
+      <p class="sub" style="font-size:12px;">${months[now.getMonth()]} ${now.getFullYear()}</p>
+    </div>
+    <div class="scroll">
+      <div class="pad-t">
+        <span class="lbl">Ce mois-ci</span>
+        <div class="qgrid">
+          <div class="qstat"><div class="serif gold" style="font-size:24px;font-weight:700;">${ms.rdqd.c}</div><div class="sub" style="font-size:11px;margin-top:2px;">RDQD</div></div>
+          <div class="qstat"><div class="serif gold" style="font-size:24px;font-weight:700;">${ms.lb.ch}</div><div class="sub" style="font-size:11px;margin-top:2px;">Chapitres</div></div>
+          <div class="qstat"><div class="serif gold" style="font-size:24px;font-weight:700;">${ms.ps.c+ms.pg.c}</div><div class="sub" style="font-size:11px;margin-top:2px;">Prières</div></div>
+        </div>
+      </div>
+      <div class="pad-t">
+        <span class="lbl">Activités</span>
+        <div class="agrid">${acards}</div>
+      </div>
+      ${jBanner}
+    </div>
+    ${bnav('home')}
+  </div>`;
+}
+
+function openAct(id){
+  clearInterval(A._iv);A._iv=null;
+  A.timerOn=false;A.elapsed=0;A.pendingDur=0;A.activity=id;A.selBook=null;
+  if(id==='jeune')go('jeune');
+  else if(id==='llc')go('llc');
+  else go('timer');
+}
+
+// ─── SCREEN: TIMER ────────────────────────────────────────────────────────────
+function scrTimer(){
+  const names={rdqd:'Rencontre Quotidienne',lb:'Lecture de la Bible',llc:A.selBook?A.selBook.title:'Littérature',ps:'Prière Seule',pg:'Prière en Groupe',jeune:'Jeûne'};
+  const shorts={rdqd:'RDQD',lb:'LB',llc:'LLC',ps:'PS',pg:'PG',jeune:'Jeûne'};
+  const ringCls='ring'+(A.timerOn?' on':A.elapsed>0?' done':'');
+  const clkColor=A.timerOn?'var(--gd)':A.elapsed>0?'var(--tx)':'var(--sb)';
+  const btnsH=A.timerOn
+    ?`<button class="btn btn-red" style="padding:18px 64px;font-size:18px;border-radius:16px;" onclick="timerStop()">Fin</button>`
+    :A.elapsed>0
+    ?`<div class="row2"><button class="btn btn-out" onclick="timerReset()">Réinitialiser</button><button class="btn btn-gold" style="flex:1;" onclick="timerStart()">Reprendre</button></div>`
+    :`<button class="btn btn-gold" style="padding:18px 64px;font-size:18px;border-radius:16px;width:auto;" onclick="timerStart()">Début</button>`;
+
+  let modal='';
+  if(A.modal==='simple'){
+    modal=`<div class="overlay" onclick="cancelModal()"><div class="modal" onclick="event.stopPropagation()">
+      <div class="serif" style="font-size:21px;font-weight:700;margin-bottom:8px;">Enregistrer ?</div>
+      <p class="sub" style="font-size:14px;margin-bottom:10px;">Voulez-vous enregistrer une <strong class="gold">${shorts[A.activity]||''}</strong> de</p>
+      <div style="background:var(--gb);border-radius:12px;padding:14px;text-align:center;margin-bottom:20px;">
+        <div class="serif gold" style="font-size:34px;font-weight:700;letter-spacing:.04em;">${fmtClock(A.pendingDur)}</div>
+        <div class="sub" style="font-size:13px;margin-top:3px;">${fmtFull(A.pendingDur)}</div>
+      </div>
+      <div class="row2">
+        <button class="btn btn-out" onclick="cancelModal()">Non</button>
+        <button class="btn btn-gold" style="flex:1;" onclick="saveRecord({})">Oui, enregistrer</button>
+      </div>
+    </div></div>`;
+  } else if(A.modal==='lb'){
+    modal=`<div class="overlay" onclick="cancelModal()"><div class="modal" onclick="event.stopPropagation()">
+      <div class="serif" style="font-size:21px;font-weight:700;margin-bottom:10px;">Chapitres lus</div>
+      <div class="gold-box" style="margin-bottom:16px;">${IC.clk}<span class="gold" style="font-weight:700;font-size:15px;">${fmtClock(A.pendingDur)}</span></div>
+      <div class="field">
+        <label class="lbl" for="inp-ch">Nombre de chapitres lus</label>
+        <input id="inp-ch" type="number" min="1" placeholder="ex : 3"
+          style="font-size:18px;padding:16px;margin-bottom:20px;"
+          onkeydown="if(event.key==='Enter')saveLB();">
+      </div>
+      <div class="row2">
+        <button class="btn btn-out" onclick="cancelModal()">Annuler</button>
+        <button class="btn btn-gold" style="flex:1;" onclick="saveLB()">Enregistrer</button>
+      </div>
+    </div></div>`;
+  } else if(A.modal==='llc'){
+    modal=`<div class="overlay" onclick="cancelModal()"><div class="modal" onclick="event.stopPropagation()">
+      <div class="serif" style="font-size:21px;font-weight:700;margin-bottom:4px;">Pages lues</div>
+      <p class="gold" style="font-weight:600;font-size:14px;margin:0 0 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${A.selBook?A.selBook.title:''}</p>
+      <div class="gold-box" style="margin-bottom:16px;">${IC.clk}<span class="gold" style="font-weight:700;font-size:15px;">${fmtClock(A.pendingDur)}</span></div>
+      <div class="field">
+        <label class="lbl" for="inp-pg">Nombre de pages lues</label>
+        <input id="inp-pg" type="number" min="1" placeholder="ex : 15"
+          style="font-size:18px;padding:16px;margin-bottom:20px;"
+          onkeydown="if(event.key==='Enter')saveLLC();">
+      </div>
+      <div class="row2">
+        <button class="btn btn-out" onclick="cancelModal()">Annuler</button>
+        <button class="btn btn-gold" style="flex:1;" onclick="saveLLC()">Enregistrer</button>
+      </div>
+    </div></div>`;
+  }
+
+  return `
+  <div class="screen">
+    <div class="header">
+      <button class="btn btn-icon" onclick="back();clearInterval(A._iv);A.timerOn=false;A.elapsed=0;">${IC.back}</button>
+      <div>
+        <div class="sub" style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;">${shorts[A.activity]||''}</div>
+        <div class="serif" style="font-size:17px;font-weight:700;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${names[A.activity]||''}</div>
+      </div>
+    </div>
+    <div class="timer-center">
+      <div id="tring" class="${ringCls}">
+        <div id="tclk" class="clock" style="color:${clkColor};">${fmtClock(A.elapsed)}</div>
+        <div class="clock-sub"><span>HH</span><span>MM</span><span>SS</span></div>
+        <div id="tstat" class="timer-status${A.timerOn?' pulsing':''}">${A.timerOn?'En cours…':A.elapsed>0?'Arrêté':''}</div>
+      </div>
+      <div id="tbtns">${btnsH}</div>
+      ${!A.timerOn&&!A.elapsed?`<p class="sub" style="font-size:13px;text-align:center;max-width:260px;line-height:1.6;">Appuyez sur <strong>Début</strong> pour lancer le chronomètre.</p>`:''}
+    </div>
+    ${modal}
+  </div>`;
+}
+
+function saveLB(){
+  const v=parseInt((document.getElementById('inp-ch')||{}).value);
+  if(!v||v<1){const e=document.getElementById('inp-ch');if(e){e.focus();e.style.borderColor='var(--rd)';}return;}
+  saveRecord({chapters:v});
+}
+function saveLLC(){
+  const v=parseInt((document.getElementById('inp-pg')||{}).value);
+  if(!v||v<1){const e=document.getElementById('inp-pg');if(e){e.focus();e.style.borderColor='var(--rd)';}return;}
+  saveRecord({pages:v,bookId:A.selBook.id,bookTitle:A.selBook.title});
+}
+
+// ─── SCREEN: LLC ──────────────────────────────────────────────────────────────
+function scrLLC(){
+  const bH=A.books.length===0?`
+    <div style="text-align:center;padding:60px 24px;">
+      <div style="font-size:56px;margin-bottom:16px;">📚</div>
+      <p style="font-weight:600;font-size:16px;margin-bottom:8px;">Aucun livre ajouté</p>
+      <p class="sub" style="font-size:14px;">Appuyez sur + pour ajouter votre premier livre.</p>
+    </div>`:
+    A.books.map(b=>{
+      const pct=Math.min(Math.round(b.pagesRead/b.totalPages*100),100);
+      return `<div class="card" style="margin-bottom:12px;cursor:pointer;" onclick="pickBook('${b.id}')">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+          <div style="flex:1;padding-right:10px;">
+            <div style="font-weight:600;font-size:15px;margin-bottom:3px;">${b.title}</div>
+            <div class="sub" style="font-size:12px;">${b.pagesRead} / ${b.totalPages} pages</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="serif gold" style="font-size:20px;font-weight:700;">${pct}%</span>
+            <button class="btn btn-icon" onclick="event.stopPropagation();delBook('${b.id}')" style="color:var(--sb);">${IC.trash}</button>
+          </div>
+        </div>
+        <div class="pbar"><div class="pfill" style="width:${pct}%;"></div></div>
+      </div>`;}).join('');
+  return `
+  <div class="screen">
+    <div class="header">
+      <button class="btn btn-icon" onclick="go('home')">${IC.back}</button>
+      <div class="serif" style="font-size:20px;font-weight:700;">Littérature Chrétienne</div>
+    </div>
+    <div class="scroll"><div class="pad-t">${bH}</div></div>
+    <button class="fab btn" onclick="go('llc_add')">${IC.plus}</button>
+  </div>`;
+}
+
+function pickBook(id){
+  A.selBook=A.books.find(b=>b.id===id);
+  if(!A.selBook)return;
+  A.activity='llc';A.elapsed=0;
+  go('timer');
+}
+function delBook(id){A.books=A.books.filter(b=>b.id!==id);sv('books',A.books);R();}
+
+// ─── SCREEN: LLC ADD ──────────────────────────────────────────────────────────
+function scrLLCAdd(){
+  return `
+  <div class="screen">
+    <div class="header">
+      <button class="btn btn-icon" onclick="go('llc')">${IC.back}</button>
+      <div class="serif" style="font-size:20px;font-weight:700;">Ajouter un livre</div>
+    </div>
+    <div class="pad" style="display:flex;flex-direction:column;gap:16px;">
+      <div class="field">
+        <label class="lbl" for="inp-bt">Titre du livre</label>
+        <input id="inp-bt" type="text" placeholder="Titre du livre"
+          autocorrect="off" style="font-size:17px;padding:16px;"
+          onkeydown="if(event.key==='Enter'){document.getElementById('inp-bp').focus();}">
+      </div>
+      <div class="field">
+        <label class="lbl" for="inp-bp">Nombre total de pages</label>
+        <input id="inp-bp" type="number" min="1" placeholder="ex : 320"
+          style="font-size:17px;padding:16px;"
+          onkeydown="if(event.key==='Enter')addBook();">
+      </div>
+      <button class="btn btn-gold" onclick="addBook()" style="margin-top:8px;">Ajouter le livre</button>
+    </div>
+  </div>`;
+}
+
+function addBook(){
+  const t=(document.getElementById('inp-bt')||{}).value||'';
+  const p=parseInt((document.getElementById('inp-bp')||{}).value);
+  if(!t.trim()){const e=document.getElementById('inp-bt');if(e){e.focus();e.style.borderColor='var(--rd)';}return;}
+  if(!p||p<1){const e=document.getElementById('inp-bp');if(e){e.focus();e.style.borderColor='var(--rd)';}return;}
+  A.books.push({id:Date.now().toString(),title:t.trim(),totalPages:p,pagesRead:0});
+  sv('books',A.books);go('llc');
+}
+
+// ─── SCREEN: JEÛNE ────────────────────────────────────────────────────────────
+function scrJeune(){
+  return `
+  <div class="screen">
+    <div class="header">
+      <button class="btn btn-icon" onclick="go('home')">${IC.back}</button>
+      <div class="serif" style="font-size:20px;font-weight:700;">Enregistrer un Jeûne</div>
+    </div>
+    <div class="pad" style="display:flex;flex-direction:column;gap:20px;">
+      <div>
+        <label class="lbl">Type de jeûne</label>
+        <div class="row2">
+          <button id="jt-complet" class="type-btn${A.jType==='complet'?' on':''}" onclick="setJType('complet')">Complet</button>
+          <button id="jt-partiel" class="type-btn${A.jType==='partiel'?' on':''}" onclick="setJType('partiel')">Partiel</button>
+        </div>
+      </div>
+      <div class="field">
+        <label class="lbl" for="inp-jd">Nombre de jours</label>
+        <input id="inp-jd" type="number" min="1" placeholder="ex : 3"
+          style="font-size:18px;padding:16px;"
+          onkeydown="if(event.key==='Enter')saveJeune();">
+      </div>
+      <button class="btn btn-gold" onclick="saveJeune()">Enregistrer le jeûne</button>
+    </div>
+  </div>`;
+}
+
+function setJType(t){
+  A.jType=t;
+  ['complet','partiel'].forEach(x=>{const b=document.getElementById('jt-'+x);if(b)b.className='type-btn'+(x===t?' on':'');});
+}
+function saveJeune(){
+  const v=parseInt((document.getElementById('inp-jd')||{}).value);
+  if(!v||v<1){const e=document.getElementById('inp-jd');if(e){e.focus();e.style.borderColor='var(--rd)';}return;}
+  A.records.push({id:Date.now().toString(),type:'jeune',date:new Date().toISOString(),duration:0,fastType:A.jType,days:v});
+  sv('records',A.records);go('home');
+}
+
+// ─── SCREEN: REPORTS ──────────────────────────────────────────────────────────
+function statRows(st){
+  function row(l,v,d){return `<div class="stat-row"><span class="sub" style="font-size:14px;">${l}</span><div><div class="serif gold" style="font-size:15px;font-weight:700;">${v}</div>${d?`<div class="sub" style="font-size:11px;margin-top:2px;">${d}</div>`:''}</div></div>`;}
+  let h=row('RDQD',st.rdqd.c+' séance'+(st.rdqd.c!==1?'s':''),fmtShort(st.rdqd.d));
+  h+=row('Lecture Bible',st.lb.ch+' chapitre'+(st.lb.ch!==1?'s':''),fmtShort(st.lb.d));
+  h+=row('Prière seule',st.ps.c+' séance'+(st.ps.c!==1?'s':''),fmtShort(st.ps.d));
+  h+=row('Prière en groupe',st.pg.c+' séance'+(st.pg.c!==1?'s':''),fmtShort(st.pg.d));
+  h+=row('Jeûne complet',st.j.comp+' jour'+(st.j.comp!==1?'s':''),'');
+  h+=row('Jeûne partiel',st.j.part+' jour'+(st.j.part!==1?'s':''),'');
+  if(st.llc.c>0){
+    const bs=st.llc.bklist.map(b=>`<div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-size:13px;">${b.title}</span><span class="gold" style="font-weight:700;font-size:13px;">${b.pct}%</span></div><div class="pbar"><div class="pfill" style="width:${b.pct}%;"></div></div></div>`).join('');
+    h+=`<div class="card" style="cursor:default;margin-bottom:8px;"><div class="sub" style="font-size:13px;margin-bottom:10px;">Littérature chr. — ${st.llc.c} séance${st.llc.c!==1?'s':''} · ${fmtShort(st.llc.d)}</div>${bs}</div>`;
+  }
+  return h;
+}
+
+function scrReports(){
+  const now=new Date().toISOString();
+  const ms=cStats(A.records.filter(r=>mKey(r.date)===mKey(now)),A.books);
+  const ys=cStats(A.records.filter(r=>yKey(r.date)===yKey(now)),A.books);
+  const arch=A.reports.length?`<div class="pad-t" style="padding-bottom:16px;">
+    <span class="lbl">Rapports archivés</span>
+    ${[...A.reports].sort((a,b)=>b.key.localeCompare(a.key)).map(r=>`
+      <div class="card" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;cursor:pointer;" onclick="openReport('${r.id}')">
+        <div><div style="font-weight:600;font-size:15px;">${r.label}</div><div class="sub" style="font-size:12px;margin-top:2px;">${r.period==='month'?'Rapport mensuel':'Rapport annuel'}</div></div>
+        ${IC.chev}
+      </div>`).join('')}</div>`:'';
+  return `
+  <div class="screen">
+    <div class="header-plain"><h1 class="serif" style="font-size:24px;font-weight:700;">Rapports</h1></div>
+    <div class="scroll">
+      <div class="pad-t"><span class="lbl">Mois en cours — ${mLabel(mKey(now))}</span>${statRows(ms)}</div>
+      <div class="pad-t"><span class="lbl" style="margin-top:8px;">Année en cours — ${yKey(now)}</span>${statRows(ys)}</div>
+      ${arch}
+    </div>
+    ${bnav('reports')}
+  </div>`;
+}
+
+function openReport(id){A.selReport=A.reports.find(r=>r.id===id);if(A.selReport)go('rdetail');}
+
+function scrRdetail(){
+  if(!A.selReport)return scrReports();
+  return `
+  <div class="screen">
+    <div class="header">
+      <button class="btn btn-icon" onclick="go('reports')">${IC.back}</button>
+      <div>
+        <div class="sub" style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;">${A.selReport.period==='month'?'Rapport mensuel':'Rapport annuel'}</div>
+        <div class="serif" style="font-size:18px;font-weight:700;">${A.selReport.label}</div>
+      </div>
+    </div>
+    <div class="scroll"><div class="pad-t" style="padding-bottom:16px;">${statRows(A.selReport.stats)}</div></div>
+  </div>`;
+}
+
+// ─── SCREEN: SETTINGS ─────────────────────────────────────────────────────────
+function scrSettings(){
+  const tot={
+    rdqd:A.records.filter(r=>r.type==='rdqd').length,
+    ch:A.records.filter(r=>r.type==='lb').reduce((a,r)=>a+(r.chapters||0),0),
+    pr:A.records.filter(r=>r.type==='ps'||r.type==='pg').length,
+    jours:A.records.filter(r=>r.type==='jeune').reduce((a,r)=>a+(r.days||0),0)
+  };
+  return `
+  <div class="screen">
+    <div class="header-plain"><h1 class="serif" style="font-size:24px;font-weight:700;">Paramètres</h1></div>
+    <div class="scroll">
+      <div class="pad" style="display:flex;flex-direction:column;gap:14px;">
+        <div class="card" style="cursor:default;">
+          <span class="lbl">Utilisateur</span>
+          <div style="font-size:18px;font-weight:600;">${A.user.firstName} ${A.user.lastName}</div>
+        </div>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <span class="lbl" style="margin-bottom:2px;">Thème</span>
+              <div style="font-size:14px;">${A.theme==='dark'?'Mode sombre':'Mode clair'}</div>
+            </div>
+            <button onclick="toggleTheme()" style="background:var(--gb);border:1.5px solid var(--gd);border-radius:20px;padding:8px 14px;color:var(--gd);font-family:inherit;display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;">
+              ${A.theme==='dark'?IC.sun:IC.moon}${A.theme==='dark'?'Mode clair':'Mode sombre'}
+            </button>
+          </div>
+        </div>
+        <div class="card" style="cursor:default;">
+          <span class="lbl">Statistiques globales</span>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:8px;">
+            <div style="text-align:center;padding:6px 0;"><div class="serif gold" style="font-size:26px;font-weight:700;">${tot.rdqd}</div><div class="sub" style="font-size:11px;margin-top:2px;">RDQD total</div></div>
+            <div style="text-align:center;padding:6px 0;"><div class="serif gold" style="font-size:26px;font-weight:700;">${tot.ch}</div><div class="sub" style="font-size:11px;margin-top:2px;">Chapitres lus</div></div>
+            <div style="text-align:center;padding:6px 0;"><div class="serif gold" style="font-size:26px;font-weight:700;">${tot.pr}</div><div class="sub" style="font-size:11px;margin-top:2px;">Séances prière</div></div>
+            <div style="text-align:center;padding:6px 0;"><div class="serif gold" style="font-size:26px;font-weight:700;">${tot.jours}</div><div class="sub" style="font-size:11px;margin-top:2px;">Jours de jeûne</div></div>
+          </div>
+        </div>
+        <div style="text-align:center;color:var(--sb);font-size:12px;padding:8px 0;">My Account v1.0 · Fait avec ✦</div>
+      </div>
+    </div>
+    ${bnav('settings')}
+  </div>`;
+}
+
+function toggleTheme(){A.theme=A.theme==='dark'?'light':'dark';sv('theme',A.theme);R();}
+
+// ─── BOTTOM NAV ───────────────────────────────────────────────────────────────
+function bnav(active){
+  return `<nav class="bnav">
+    <button class="ntab btn${active==='home'?' on':''}" onclick="go('home')">${IC.home}Accueil</button>
+    <button class="ntab btn${active==='reports'?' on':''}" onclick="go('reports')">${IC.rep}Rapports</button>
+    <button class="ntab btn${active==='settings'?' on':''}" onclick="go('settings')">${IC.set}Paramètres</button>
+  </nav>`;
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+(function init(){
+  A.user    = ld('user',null);
+  A.theme   = ld('theme','dark');
+  A.records = ld('records',[]);
+  A.books   = ld('books',[]);
+  A.reports = ld('reports',[]);
+  A.screen  = A.user ? 'home' : 'register';
+  R();
+})();
+</script>
+</body>
+</html>
